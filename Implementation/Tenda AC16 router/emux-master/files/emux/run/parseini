@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# Parses the config file and extracts
+# variables of importance. Could write this
+# in a much better manner.
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# EMUX (formerly ARMX) by Saumil Shah
+# https://emux.exploitlab.net/
+
+source /emux/run/utils
+
+if [ "$1" = "" ]
+then
+   echo "Usage: $0 <ini file>"
+   exit
+fi
+
+log "[+] Parsing INI file $1"
+
+# change to the directory containing the ini file
+# and then perform all the actions
+
+CWD=$(pwd)
+cd $(dirname "$1")
+
+while IFS='=' read key value
+do
+   case ${key} in
+      id)
+         ID="${value}"
+         log "ID=${ID}"
+         ;;
+      nvram)
+         NVRAM="${value}"
+         log "NVRAM=${NVRAM}"
+         ;;
+      randomize_va_space)
+         RANDOMIZE_VA_SPACE="${value}"
+         log "RANDOMIZE_VA_SPACE=${RANDOMIZE_VA_SPACE}"
+         ;;
+      legacy_va_layout)
+         LEGACY_VA_LAYOUT="${value}"
+         log "LEGACY_VA_LAYOUT=${LEGACY_VA_LAYOUT}"
+         ;;
+      rootfs)
+         ROOTFS="${value}"
+         log "ROOTFS=${ROOTFS}"
+         # check if rootfs needs to be tar bunzipped
+         #
+         # Note: This process happens inside the QEMU'ed kernel and
+         #       the hostfs. It is extremely slow, because the emulated
+         #       environment gets translated to the host, the host's
+         #       directory is mounted over NFS, and that too inside a
+         #       docker volume.
+         #
+         #       We shall therefore attempt extracting the rootfs in the
+         #       launcher itself, as a speed-up measure. So ideally this
+         #       code shall never be reached.
+         if [ ! -d ${ROOTFS} ]
+         then
+            log "${ROOTFS} not detected"
+            ROOTFSTAR="${ROOTFS}.tar.bz2"
+            if [ ! -f ${ROOTFSTAR} ]
+            then
+               fatalerror "${ROOTFSTAR} not present. Cannot continue."
+            fi
+            log "Extracting ${ROOTFSTAR}"
+            echo "First run ... extracting ${ROOTFSTAR}"
+            pv ${ROOTFSTAR} | tar -jxf -
+            log "Done"
+         fi
+         ;;
+      mount_dev_tree)
+         MOUNTDEVTREE="${value}"
+         log "MOUNTDEVTREE=${MOUNTDEVTREE}"
+      	;;
+      ld_preload)
+         PRELOADDIR="${value}"
+         log "PRELOADDIR=${PRELOADDIR}"
+      	;;
+      initcommands)
+         if [ "${value}" = "" ]
+         then
+            INITCOMMANDS="/bin/sh"
+         else
+            INITCOMMANDS="${value}"
+         fi
+         log "INITCOMMANDS=${INITCOMMANDS}"
+         ;;
+   esac
+done <<< "$(cat "$1" | sed -e 's/#.*//g')"
+
+cd ${CWD}

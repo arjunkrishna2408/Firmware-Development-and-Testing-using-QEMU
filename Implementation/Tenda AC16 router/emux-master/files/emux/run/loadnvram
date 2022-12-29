@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+# Loads the key, value pairs from the nvram.ini file into
+# the emulated nvram
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# EMUX (formerly ARMX) by Saumil Shah
+# https://emux.exploitlab.net/
+
+if [ "$1" = "" ]
+then
+   echo "Syntax: loadnvram <ini file>"
+else
+   echo "Loading nvram from $1"
+   while IFS='=' read key value
+   do
+      echo "${key}='${value}'"
+      nvram set ${key}="${value}"
+   done <<< "$(cat "$1" | sed -e 's/#.*//g')"
+fi
+

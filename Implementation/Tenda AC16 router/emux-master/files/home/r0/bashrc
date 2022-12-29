@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Ignore case during tab completion.
+bind 'set completion-ignore-case on'
+
+if [ "${EMUXDOCKERSHELL}" = "1" ]
+then
+   export PS1="\[\033[97;44m\][emux-docker 🐚]\[\033[0m\] \w\\$ "
+else
+   export PS1="\[\033[97;105m\][EMUX-DOCKER 🐳]\[\033[0m\] \w\\$ "
+fi
+
+alias ls="ls -F --color=auto"
+eval $(dircolors -b ~/.dircolors/dircolors.256dark)
+export PATH="$PATH:/emux/run:/emux/run/qemu-bin"

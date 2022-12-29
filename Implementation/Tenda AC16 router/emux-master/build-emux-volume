@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+# EMUX (formerly ARMX) by Saumil Shah
+# https://emux.exploitlab.net/
+
+VOL="harambe"
+SRC="files/emux"
+DEST="/emux"
+
+# remove volumes if they exist
+echo "Removing ${VOL}"
+docker volume rm ${VOL}
+
+echo "Removing null image"
+docker rmi null
+
+echo "Creating ${VOL} afresh"
+docker volume create --name ${VOL}
+
+echo "Making a new null image"
+docker build -t null -f Dockerfile-vol .
+docker container create --name empty -v ${VOL}:${DEST} null
+
+echo "Copying from ${SRC} to ${DEST}"
+for s in ${SRC}/*
+do
+   echo "$s -> ${DEST}"
+   docker cp $s empty:${DEST}
+done
+
+echo "Done..cleaning up containers"
+docker rm empty
